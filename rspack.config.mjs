@@ -1,48 +1,68 @@
-// Imports
+/*
+ * Rspack Configuration file - Module Federation 2.0 (Host/Shell)
+ * Handles the build orchestration, dev server settings, and the micro-frontend integration layer.
+ */
+
+// --- [ BOOTSTRAP & INFRASTRUCTURE ] ---
 import path from 'path';
 import { fileURLToPath } from 'url';
-import * as dotenv from 'dotenv';
 import fs from 'fs';
+import * as dotenv from 'dotenv';
 
-// Module Federation Imports
+// --- [ PLUGINS ] ---
 import { ModuleFederationPlugin } from '@module-federation/enhanced/rspack';
 import HtmlRspackPlugin from 'html-rspack-plugin';
 
-
-// Load .env variables
+// Setup environment and paths
 dotenv.config();
-
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-// Automatically grab versions from package.json for the 'shared' config
+// Extract dependencies for version-synced shared modules
 const packageJson = JSON.parse(fs.readFileSync('./package.json', 'utf-8'));
 const deps = packageJson.dependencies;
 
 /** @type {import('@rspack/core').Configuration} */
 export default {
+
+  // Root context for resolving entry points and loaders
   context: __dirname,
+
+  // Entry points must follow the Async Bootstrap pattern for MF 2.0.
+  // index.ts handles the dynamic import of the actual app logic.   
   entry: './src/index.ts',
+
   mode: 'development',
+
+  /**
+  * OUTPUT: Defines how and where bundles are served.
+  * Note: publicPath MUST be explicit for Module Federation manifests.
+  */
   output: {
-    // Falls back to 3000 if PORT isn't in .env
     publicPath: `http://localhost:${process.env.PORT || 3000}/`,
+    // clean: true // Recommended for production builds
   },
+
   resolve: {
     extensions: ['.tsx', '.ts', '.jsx', '.js', '.json'],
   },
+
+  // DEV SERVER: Configured for Micro-frontend connectivity.
   devServer: {
     port: process.env.PORT || 3000,
-    historyApiFallback: true,
+    historyApiFallback: true, // Support for client-side routing
     headers: {
+      // CORS is required so that other remotes can request assets/manifests from this origin.
       "Access-Control-Allow-Origin": "*",
     },
   },
+
+  // MODULE RULES: Transpilation and asset handling.
   module: {
     rules: [
       {
         test: /\.(j|t)sx?$/,
         use: {
-          loader: 'builtin:swc-loader',
+          loader: 'builtin:swc-loader', // high-performance Rust-based compilation.
           options: {
             jsc: {
               parser: { syntax: 'typescript', tsx: true },
@@ -53,25 +73,34 @@ export default {
       },
     ],
   },
+
+  // PLUGINS: The core of the Micro-frontend architecture.
   plugins: [
     new HtmlRspackPlugin({ template: './index.html' }),
+
     new ModuleFederationPlugin({
-      name: 'shell',
+      name: 'shell', // Unique identifier for this container
+      
       remotes: {
-        // Portability: Use the env variable for the remote manifest
-        // Example in .env: REMOTE_APP=remote_app@http://localhost:3001/mf-manifest.json
         ...(process.env.REMOTE_APP && { remote_app: process.env.REMOTE_APP }),
       },
+
+      /*
+        SHARED: Libraries shared between Host and Remotes.
+        - singleton: Only one instance of the library is loaded.
+        - eager: false: Allows MF to negotiate versions before loading (avoids factory errors).
+        - requiredVersion: Ensures the versions match the package.json exactly.
+      */
       shared: {
         react: { 
-            singleton: true, 
-            eager: false,
-            requiredVersion: deps.react 
+          singleton: true, 
+          eager: false,
+          requiredVersion: deps.react 
         },
         'react-dom': { 
-            singleton: true, 
-            eager: false,
-            requiredVersion: deps['react-dom'] 
+          singleton: true, 
+          eager: false,
+          requiredVersion: deps['react-dom'] 
         },
       },
     }),
