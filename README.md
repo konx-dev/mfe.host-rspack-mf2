@@ -1,0 +1,1 @@
+# Module Federation 2.0 Host Shell
