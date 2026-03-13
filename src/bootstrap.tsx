@@ -1,11 +1,17 @@
+import React from 'react';
 import { createRoot } from 'react-dom/client';
+import { AppShell } from './AppShell';
 
-const App = () => (
-  <div>
-    <h1>Shell Application (Host)</h1>
-    <p>This is the main container.</p>
-  </div>
+const rootElement = document.getElementById('root');
+
+if (!rootElement) {
+  throw new Error("Failed to find the root element");
+}
+
+const root = createRoot(rootElement);
+
+root.render(
+  <React.StrictMode>
+    <AppShell />
+  </React.StrictMode>
 );
-
-const root = createRoot(document.getElementById('root')!);
-root.render(<App />);

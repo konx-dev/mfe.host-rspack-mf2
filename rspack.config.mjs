@@ -80,11 +80,7 @@ export default {
 
     new ModuleFederationPlugin({
       name: 'shell', // Unique identifier for this container
-      
-      remotes: {
-        ...(process.env.REMOTE_APP && { remote_app: process.env.REMOTE_APP }),
-      },
-
+      remotes: {},
       /*
         SHARED: Libraries shared between Host and Remotes.
         - singleton: Only one instance of the library is loaded.
