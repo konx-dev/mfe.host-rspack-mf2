@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+@theme {
+    /* Tokens */
+    --color-brand-primary: #3b82f6;
+
+    /* Shadcn-specific variables mapping to Tailwind 4 tokens */
+    --color-primary: var(--color-brand-primary);
+}

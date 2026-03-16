@@ -62,7 +62,7 @@ export default {
       {
         test: /\.(j|t)sx?$/,
         use: {
-          loader: 'builtin:swc-loader', // high-performance Rust-based compilation.
+          loader: 'builtin:swc-loader',
           options: {
             jsc: {
               parser: { syntax: 'typescript', tsx: true },
@@ -71,7 +71,16 @@ export default {
           },
         },
       },
+      {
+        test: /\.css$/,
+        use: [{ loader: 'postcss-loader' }],
+        type: 'css',
+      },
     ],
+  },
+
+  experiments: {
+    css: true, // needed to load styles.css
   },
 
   // PLUGINS: The core of the Micro-frontend architecture.
